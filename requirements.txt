@@ -1,0 +1,17 @@
+fastapi==0.136.1
+uvicorn==0.47.0
+chromadb==1.5.9
+sentence-transformers==5.5.1
+PyMuPDF==1.27.2.3
+arxiv==4.0.0
+groq==1.2.0
+langchain==1.3.1
+langchain-community==0.4.1
+deepeval==4.0.3
+streamlit==1.57.0
+python-dotenv==1.2.2
+requests==2.33.1
+torch==2.12.0
+transformers==5.9.0
+python-multipart==0.0.29
+pydantic==2.13.4
