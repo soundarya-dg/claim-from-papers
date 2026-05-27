@@ -79,6 +79,8 @@ ClaimFromPapers/
 │   └── test_cases.py                 # Test queries & expected outputs
 │
 ├── tests/                            # Unit & integration tests
+│   ├── conftest.py                   # Shared pytest fixtures (session-scoped)
+│   └── test_ingestion.py             # Tests for ingestion pipeline
 │   ├── test_rag.py                   # RAG pipeline tests
 │   └── test_verification.py          # Claim verification tests
 │

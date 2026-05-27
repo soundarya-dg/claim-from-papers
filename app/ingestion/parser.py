@@ -154,23 +154,3 @@ class PDFParser:
         
         print(f"\n Successfully parsed {len(parsed_docs)} documents")
         return parsed_docs
-
-
-def main():
-
-    # Test the parser with downloaded papers
-    parser = PDFParser()
-    
-    # Parse all papers in data/papers directory
-    parsed_docs = parser.parse_directory("data/papers")
-    
-    if parsed_docs:
-        # Print summary
-        print(f"\n{'-'*80}")
-        print(f"Total documents: {len(parsed_docs)}")
-        total_pages = sum(doc['total_pages'] for doc in parsed_docs)
-        print(f"Total pages: {total_pages}")
-        print(f"Average pages per document: {total_pages / len(parsed_docs):.1f}")
-
-if __name__ == "__main__":
-    main()

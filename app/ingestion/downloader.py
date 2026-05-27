@@ -146,30 +146,3 @@ class ArxivDownloader:
         print(f"{'-'*80}\n")
         
         return downloaded_files
-
-
-def main():
-    current_year = datetime.now().year
-    downloader = ArxivDownloader(
-        output_dir="data/papers",
-        max_results=30,
-        start_year=2024,
-        end_year=current_year  # Use current year instead of fixed 2025
-    )
-    
-    # Download papers on the topic
-    query = "AI-Generated Text Detection OR LLM-Generated Text Detection"
-    
-    downloaded_files = downloader.download_papers(
-        query=query,
-        category="cs.CL"  # Computation and Language category
-    )
-    
-    if downloaded_files:
-        print(f"  Successfully downloaded {len(downloaded_files)} papers!")
-    else:
-        print(" No papers were downloaded.")
-
-
-if __name__ == "__main__":
-    main()
