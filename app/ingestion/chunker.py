@@ -14,13 +14,16 @@ project_root = Path(__file__).parent.parent.parent
 sys.path.insert(0, str(project_root))
 
 
+# TextChunker - Cuts long text into smaller overlapping pieces
+# VectorStore — Manages ChromaDB; stores and searches chunks
+
 class TextChunker:
     """Chunks text into overlapping token-based pieces."""
     
     def __init__(self, chunk_size: int = CHUNK_SIZE, chunk_overlap: int = CHUNK_OVERLAP):
         """
         Initialize the chunker.
-        
+
         Args:
             chunk_size: Maximum number of tokens per chunk
             chunk_overlap: Number of overlapping tokens between chunks
@@ -45,7 +48,7 @@ class TextChunker:
     def chunk_text(self, text: str, metadata: Optional[Dict] = None) -> List[Dict[str, any]]:
         """
         Chunk text into overlapping pieces.
-        
+    
         Args:
             text: Text to chunk
             metadata: Metadata to attach to each chunk
@@ -120,7 +123,7 @@ class VectorStore:
     def __init__(self, collection_name: str = "research_papers", persist_directory: str = VECTORSTORE_DIR, embedding_model: str = EMBEDDING_MODEL):
         """
         Initialize the vector store.
-        
+
         Args:
             collection_name: Name of the ChromaDB collection
             persist_directory: Directory to persist the vector store
@@ -131,9 +134,8 @@ class VectorStore:
         self.persist_directory.mkdir(parents=True, exist_ok=True)
         
         # Initialize embedding model
-        print(f"Loading embedding model: {embedding_model}")
         self.embedding_model = SentenceTransformer(embedding_model)
-        print(f"✓ Model loaded: {embedding_model}")
+        print(f" Model loaded: {embedding_model}")
         
         # Initialize ChromaDB client
         self.client = chromadb.PersistentClient(
