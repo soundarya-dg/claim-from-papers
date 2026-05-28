@@ -56,12 +56,8 @@ ClaimFromPapers/
 │   │   └── pipeline.py               # End-to-end RAG orchestration
 │   │
 │   ├── verification/                 # Claim verification system
-│   │   ├── claim_extractor.py        # Extract atomic claims from answers
-│   │   └── claim_verifier.py         # Verify claims against sources
-│   │
-│   └── middleware/                   
-│       ├── logger.py                 # Logging configuration
-│       └── error_handler.py          # Error handling utilities
+│       ├── claim_extractor.py        # Extract atomic claims from answers
+│       └── claim_verifier.py         # Verify claims against sources
 │
 ├── config/                           
 │   └── settings.py                   # Application settings & constants

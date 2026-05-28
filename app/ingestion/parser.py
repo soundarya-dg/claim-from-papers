@@ -11,7 +11,6 @@ class PDFParser:
         pass
     
     def extract_title_from_filename(self, filename: str) -> str:
-
         # Remove file extension
         title = Path(filename).stem
         # Remove arXiv ID prefix if present
