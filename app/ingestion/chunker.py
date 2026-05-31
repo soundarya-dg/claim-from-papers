@@ -1,17 +1,16 @@
+import sys
+from pathlib import Path
+
+# Add project root to Python path — must come before any project-relative imports
+project_root = Path(__file__).parent.parent.parent
+sys.path.insert(0, str(project_root))
+
 import chromadb
-from chromadb.config import Settings
 from sentence_transformers import SentenceTransformer
 from typing import List, Dict, Optional
 import uuid
 import re
-from config.settings import (CHUNK_SIZE,CHUNK_OVERLAP,EMBEDDING_MODEL,VECTORSTORE_DIR)
-from app.ingestion.parser import PDFParser
-import sys
-from pathlib import Path
-
-# Add project root to Python path
-project_root = Path(__file__).parent.parent.parent
-sys.path.insert(0, str(project_root))
+from config.settings import (CHUNK_SIZE, CHUNK_OVERLAP, EMBEDDING_MODEL, VECTORSTORE_DIR)
 
 
 # TextChunker - Cuts long text into smaller overlapping pieces
