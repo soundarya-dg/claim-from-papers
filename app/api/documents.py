@@ -67,14 +67,14 @@ async def upload_document(
         )
     
     # Create temporary file to save upload
-    temp_file = None
+    temp_path = None
     saved_path = None
     
     try:
         # Save uploaded file to temporary location
         with tempfile.NamedTemporaryFile(delete=False, suffix='.pdf') as temp_file:
-            shutil.copyfileobj(file.file, temp_file)
             temp_path = temp_file.name
+            shutil.copyfileobj(file.file, temp_file)
         
         # Get components
         parser = get_parser()
@@ -142,7 +142,7 @@ async def upload_document(
         )
     finally:
         # Cleanup temporary file
-        if temp_file and os.path.exists(temp_path):
+        if temp_path and os.path.exists(temp_path):
             try:
                 os.unlink(temp_path)
             except:

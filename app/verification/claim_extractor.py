@@ -1,6 +1,7 @@
 import sys
 import json
 import re
+import time
 from pathlib import Path
 from typing import List, Optional
 
@@ -51,14 +52,27 @@ class ClaimExtractor:
             },
         ]
 
-        response = self.client.chat.completions.create(
-            model=self.model,
-            messages=messages,
-            temperature=0.0,
-            max_tokens=1024,
-        )
-
-        raw = response.choices[0].message.content.strip()
+        last_exc: Exception = Exception("Unknown error")
+        for attempt in range(4):
+            try:
+                response = self.client.chat.completions.create(
+                    model=self.model,
+                    messages=messages,
+                    temperature=0.0,
+                    max_tokens=1024,
+                )
+                raw = response.choices[0].message.content.strip()
+                break
+            except Exception as e:
+                last_exc = e
+                err_str = str(e)
+                if "tokens per day" in err_str:
+                    return []  # daily limit hit, stop immediately
+                wait = 15 * (attempt + 1)
+                print(f"[claim_extractor] Error: {err_str[:120]} — waiting {wait}s before retry {attempt + 1}/4...")
+                time.sleep(wait)
+        else:
+            return []
 
         # Attempt direct JSON parse
         try:

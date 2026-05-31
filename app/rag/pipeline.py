@@ -71,7 +71,6 @@ class RAGPipeline:
                     'chunks_retrieved': 0,
                     'claims': [],
                     'grounding_rate': 0.0,
-                    'error': 'No relevant chunks found',
                     'metadata': {
                         'retrieval_time': retrieval_time,
                         'generation_time': 0,
@@ -105,10 +104,14 @@ class RAGPipeline:
                 verification_results = []
                 grounding_rate = 0.0
 
-            # Step 5: Prepare response
+            # Step 5: Plain-English summary
+            short_answer = self.generator.simplify_answer(question, answer)
+
+            # Step 6: Prepare response
             response = {
                 'question': question,
                 'answer': answer,
+                'short_answer': short_answer,
                 'chunks_retrieved': len(chunks),
                 'claims': verification_results,
                 'grounding_rate': grounding_rate,

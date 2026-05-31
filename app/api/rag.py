@@ -79,6 +79,7 @@ class QueryResponse(BaseModel):
     """RAG query response."""
     question: str
     answer: str
+    short_answer: Optional[str] = None
     chunks_retrieved: int
     sources: Optional[List[Source]] = None
     claims: Optional[List[ClaimResult]] = None

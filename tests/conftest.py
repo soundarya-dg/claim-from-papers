@@ -18,27 +18,37 @@ def test_papers_dir():
     """
     Download test papers once for the entire test session.
     Creates "data/test/" folder, downloads 5 papers, and cleans up after all tests.
+    Falls back to copying papers from data/papers/ if arXiv is unavailable.
     """
     # Create test directory
     test_dir = Path("data/test")
     test_dir.mkdir(parents=True, exist_ok=True)
-    
-    # Download papers
+
+    # Try to download from arXiv
     downloader = ArxivDownloader(
         output_dir=str(test_dir),
         max_results=5,
         start_year=2024,
         end_year=datetime.now().year
     )
-    
-    downloaded_files = downloader.download_papers(
-        query="AI-Generated Text Detection",
-        category="cs.CL"
+
+    downloader.download_papers(
+        query="text classification using large language models"
     )
-    
+
+    # If download failed/rate-limited, fall back to existing papers in data/papers/
+    if len(list(test_dir.glob("*.pdf"))) == 0:
+        fallback_dir = Path("data/papers")
+        if fallback_dir.exists():
+            existing_pdfs = sorted(fallback_dir.glob("*.pdf"))[:5]
+            for pdf in existing_pdfs:
+                shutil.copy(pdf, test_dir / pdf.name)
+            if existing_pdfs:
+                print(f"\n[conftest] arXiv unavailable — copied {len(existing_pdfs)} paper(s) from data/papers/ for testing.")
+
     # Provide the test directory to all tests
     yield test_dir
-    
+
     # Cleanup after all tests complete
     if test_dir.exists():
         shutil.rmtree(test_dir)

@@ -1,4 +1,5 @@
 import sys
+import time
 from pathlib import Path
 from typing import List, Dict, Optional
 
@@ -71,14 +72,25 @@ class ClaimVerifier:
             {"role": "system", "content": _VERDICT_SYSTEM_PROMPT},
             {"role": "user", "content": f"Claim: {claim}\n\nPassage: {chunk_text}"},
         ]
-        response = self.client.chat.completions.create(
-            model=self.model,
-            messages=messages,
-            temperature=0.0,
-            max_tokens=10,
-        )
-        verdict = response.choices[0].message.content.strip().lower()
-        return verdict
+        last_exc: Exception = Exception("Unknown error")
+        for attempt in range(4):
+            try:
+                response = self.client.chat.completions.create(
+                    model=self.model,
+                    messages=messages,
+                    temperature=0.0,
+                    max_tokens=10,
+                )
+                return response.choices[0].message.content.strip().lower()
+            except Exception as e:
+                last_exc = e
+                err_str = str(e)
+                if "tokens per day" in err_str:
+                    break  # daily limit hit, stop immediately
+                wait = 15 * (attempt + 1)
+                print(f"[claim_verifier] Error: {err_str[:120]} — waiting {wait}s before retry {attempt + 1}/4...")
+                time.sleep(wait)
+        return "contradicted"  # conservative fallback on failure
 
 
     # Public API

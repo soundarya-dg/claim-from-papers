@@ -1,7 +1,8 @@
 import os
 import time
+import random
 from pathlib import Path
-from typing import List, Optional
+from typing import List
 import arxiv
 import requests
 from datetime import datetime
@@ -39,13 +40,12 @@ class ArxivDownloader:
         # Limit filename length
         return filename[:200]
     
-    def download_papers(self, query: str, category: Optional[str] = None) -> List[str]:
+    def download_papers(self, query: str) -> List[str]:
         """
         Download papers from arXiv based on search query.
         
         Args:
             query: Search query string
-            category: ArXiv category to search in (e.g., 'cs.CL', 'cs.AI')
             
         Returns:
             List of downloaded file paths
@@ -59,10 +59,7 @@ class ArxivDownloader:
         print(f"Output: {self.output_dir}")
         print(f"{'-'*80}\n")
         
-        # Construct search query with category if provided
-        search_query = f"{query}"
-        if category:
-            search_query = f"cat:{category} AND {query}"
+        search_query = query
         
         # Create arxiv search client
         client = arxiv.Client()
@@ -80,63 +77,88 @@ class ArxivDownloader:
         skipped_count = 0
         
         print("Searching and downloading papers...\n")
-        
+
+        # Fetch results with retry on 429
+        def fetch_results(retries: int = 5, base_wait: int = 30):
+            for attempt in range(1, retries + 1):
+                try:
+                    return list(client.results(search))
+                except Exception as e:
+                    if "429" in str(e) and attempt < retries:
+                        wait = base_wait * attempt + random.randint(0, 10)
+                        print(f"arXiv rate-limited (429). Waiting {wait}s before retry {attempt}/{retries - 1}...")
+                        time.sleep(wait)
+                    else:
+                        raise
+            return []
+
         try:
-            for result in client.results(search):
+            results = fetch_results()
+        except Exception as e:
+            print(f"\nError during search/download: {e}")
+            results = []
+
+        try:
+            for result in results:
                 # Check if we have downloaded enough papers
                 if downloaded_count >= self.max_results:
                     break
-                
+
                 # Check if paper is within date range
                 if not self.is_within_date_range(result.published):
                     skipped_count += 1
                     continue
-                
+
                 # Create filename from paper ID and title
                 paper_id = result.entry_id.split('/')[-1]
-                title_part = self.clean_filename(result.title[:50])
+                title_part = self.clean_filename(result.title)
                 filename = f"{paper_id}_{title_part}.pdf"
                 filepath = self.output_dir / filename
-                
+
                 # Skip if already downloaded
                 if filepath.exists():
                     print(f"[SKIP] Already exists: {filename}")
                     downloaded_count += 1
                     downloaded_files.append(str(filepath))
                     continue
-                
+
                 try:
                     # Download the paper
                     print(f"[{downloaded_count + 1}/{self.max_results}] Downloading: {result.title}")
                     print(f"    Author(s): {', '.join([a.name for a in result.authors[:3]])}{'...' if len(result.authors) > 3 else ''}")
                     print(f"    Published: {result.published.strftime('%Y-%m-%d')}")
                     print(f"    URL: {result.entry_id}")
-                    
-                    # Download PDF using the correct method
+
+                    # Download PDF with retry on 429
                     pdf_url = result.pdf_url
-                    response = requests.get(pdf_url)
-                    response.raise_for_status()
-                    
+                    for pdf_attempt in range(1, 4):
+                        pdf_response = requests.get(pdf_url)
+                        if pdf_response.status_code == 429:
+                            wait = 30 * pdf_attempt
+                            print(f"    PDF rate-limited (429). Waiting {wait}s...")
+                            time.sleep(wait)
+                            continue
+                        pdf_response.raise_for_status()
+                        break
+
                     # Save PDF
                     with open(filepath, 'wb') as f:
-                        f.write(response.content)
-                    
+                        f.write(pdf_response.content)
+
                     downloaded_files.append(str(filepath))
                     downloaded_count += 1
-                    
+
                     print(f"    Saved to: {filepath.name}\n")
-                    
-                    # Add delay
+
+                    # Delay between downloads to respect arXiv rate limits
                     time.sleep(3)
-                    
+
                 except Exception as e:
                     print(f"    Error downloading: {e}\n")
                     continue
-                    
+
         except KeyboardInterrupt:
             print("\n\nDownload interrupted by user.")
-        except Exception as e:
-            print(f"\nError during search/download: {e}")
         
         # Print summary
         print(f"{'-'*80}")
