@@ -71,8 +71,9 @@ claim-from-papers/
 │   └── chroma.sqlite3            # Vector embeddings database
 │
 ├── evaluation/
-│   ├── test_cases.py             # 15 test questions across 3 difficulty levels
-│   └── evaluator.py              # Runs pipeline + measures all metrics
+│   ├── test_cases.py             # Test questions across 3 difficulty levels
+│   ├── evaluator.py              # Runs pipeline + measures all metrics
+│   └── results.json              # Evaluation JSON results
 │
 └── tests/                        # Unit and integration tests
     ├── conftest.py               # Shared pytest fixtures
