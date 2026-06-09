@@ -23,7 +23,7 @@ VECTORSTORE_DIR = "vectorstore"
 CONFIDENCE_THRESHOLD = 0.45
 
 # Paper download configuration — edit these to change your topic and dataset
-DOWNLOAD_TOPIC = "text classification using large language models"
+DOWNLOAD_TOPIC = "text classification BERT fine-tuning benchmark"
 DOWNLOAD_NUM_PAPERS = 30
 DOWNLOAD_START_YEAR = 2024
 DOWNLOAD_END_YEAR = 2026
