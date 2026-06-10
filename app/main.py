@@ -47,7 +47,7 @@ app.include_router(documents_router)
 app.include_router(rag_router)
 
 
-@app.get("/")
+@app.get("/", include_in_schema=False)
 async def root():
     """Root endpoint with API information."""
     return {
@@ -57,13 +57,13 @@ async def root():
         "endpoints": {
             "docs": "/docs",
             "redoc": "/redoc",
-            "documents": {
-                "upload": "POST /documents/upload",
-                "list": "GET /documents/list"
+            "papers": {
+                "upload": "POST /papers/upload",
+                "list": "GET /papers/list"
             },
-            "rag": {
-                "query": "POST /rag/query",
-                "query_stream": "POST /rag/query-stream"
+            "query": {
+                "ask": "POST /query/ask",
+                "stream": "POST /query/stream"
             }
         }
     }
