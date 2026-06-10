@@ -64,7 +64,7 @@ with st.sidebar:
                         )
                     }
                     resp = requests.post(
-                        f"{api_url}/documents/upload",
+                        f"{api_url}/papers/upload",
                         files=files,
                         data={"save_to_papers": "false"},
                         timeout=120,
@@ -262,7 +262,7 @@ if submit and question.strip():
     with st.spinner("Running pipeline..."):
         try:
             response = requests.post(
-                f"{api_url}/rag/query",
+                f"{api_url}/query/ask",
                 json={
                     "question": question.strip(),
                     "top_k": top_k,

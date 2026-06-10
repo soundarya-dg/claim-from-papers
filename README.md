@@ -2,6 +2,8 @@
 
 This project is a proof-of-concept RAG system that not only answers questions based on research papers but also provides transparent claim verification for each part of the answer. It ensures that every claim in the generated answer is backed by real sources, giving users confidence in the information they receive.
 
+![UI Screenshot](assets/ui.png)
+
 ### Motivation
 
 With the rise of LLMs, there's a growing concern about hallucinations and misinformation.
@@ -45,8 +47,8 @@ claim-from-papers/
 ├── app/
 │   ├── main.py                   # FastAPI application entry point
 │   ├── api/
-│   │   ├── documents.py          # POST /documents/upload, GET /documents/list
-│   │   └── rag.py                # POST /rag/query, POST /rag/query-stream
+│   │   ├── documents.py          # POST /papers/upload, GET /papers/list
+│   │   └── rag.py                # POST /query/ask, POST /query/stream
 │   ├── ingestion/
 │   │   ├── ingest_and_vectorize.py   # Download papers + embed and index into ChromaDB
 │   │   ├── downloader.py         # arXiv paper downloader
@@ -71,9 +73,9 @@ claim-from-papers/
 │   └── chroma.sqlite3            # Vector embeddings database
 │
 ├── evaluation/
-│   ├── test_cases.py             # Test questions across 3 difficulty levels
+│   ├── test_cases.py             # 15 test questions across 3 difficulty levels
 │   ├── evaluator.py              # Runs pipeline + measures all metrics
-│   └── results.json              # Evaluation JSON results
+│   └── results.json              # Saved evaluation results (JSON)
 │
 └── tests/                        # Unit and integration tests
     ├── conftest.py               # Shared pytest fixtures
@@ -143,27 +145,28 @@ python app/ingestion/ingest_and_vectorize.py --skip-download  # re-index only
 
 ## Evaluation
 
-Runs 15 written test questions across three difficulty levels (easy, medium, hard) and measures:
+Evaluated across 5 test cases (easy / medium / hard) achieving an average **54.5% Claim Grounding Rate**, **0.87 Faithfulness**, and **0.62 Answer Relevancy**. Full results in [`evaluation/results.json`](evaluation/results.json).
 
-- **Claim Grounding Rate** — fraction of claims verified as grounded (always computed)
-- **Keyword Coverage** — fraction of expected keywords present in the answer
-- **Answer Relevancy** — DeepEval metric using Groq as the LLM judge
-- **Faithfulness** — DeepEval metric using Groq as the LLM judge
+![Evaluation Results](assets/eval-results.png)
+
+- **Claim Grounding Rate** - fraction of claims verified as grounded (always computed)
+- **Keyword Coverage** - fraction of expected keywords present in the answer
+- **Answer Relevancy** - DeepEval metric using Groq as the LLM judge
+- **Faithfulness** - DeepEval metric using Groq as the LLM judge
 
 ```bash
 source venv/bin/activate
 python evaluation/evaluator.py
 ```
 
-Results are printed to stdout and saved to `evaluation/results.json`.
-
-
 ## API Reference
 
-1. **POST /rag/query** — Ask a question and receive a grounded answer with claim verification.
-2. **POST /rag/query-stream** — Ask a question and receive a streamed answer with real-time claim verification updates.
-3. **POST /documents/upload** — Upload a PDF to expand the knowledge base.
-4. **GET /documents/list** — List all PDFs in the papers directory.
+| Method | Endpoint | Description |
+|---|---|---|
+| POST | /query/ask | Ask a question → answer + claims + grounding rate |
+| POST | /query/stream | Same with streaming response |
+| POST | /papers/upload | Upload a PDF to expand the knowledge base |
+| GET | /papers/list | List all papers in the library |
 
 
 ## Tests
@@ -199,3 +202,9 @@ pytest tests/test_rag.py -v
 # Run a specific class
 pytest tests/test_rag.py::TestRetriever -v
 ```
+
+## Why this is different
+
+Standard RAG gives you an answer.
+
+**Claim From Papers gives you an answer and tells you exactly which parts of it are true.**

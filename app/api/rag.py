@@ -13,7 +13,7 @@ from app.rag.pipeline import RAGPipeline
 
 
 # Create router
-router = APIRouter(prefix="/rag", tags=["rag"])
+router = APIRouter(prefix="/query", tags=["query"])
 
 # Initialize pipeline (singleton pattern)
 _pipeline = None
@@ -87,7 +87,7 @@ class QueryResponse(BaseModel):
     metadata: Dict
 
 
-@router.post("/query", response_model=QueryResponse)
+@router.post("/ask", response_model=QueryResponse)
 async def query_rag(request: QueryRequest) -> JSONResponse:
     """
     Ask a question using RAG.
@@ -134,7 +134,7 @@ async def query_rag(request: QueryRequest) -> JSONResponse:
         )
 
 
-@router.post("/query-stream")
+@router.post("/stream")
 async def query_rag_stream(request: QueryRequest):
     """
     Ask a question using RAG with streaming response.

@@ -12,7 +12,7 @@ from config.settings import CHUNK_SIZE, CHUNK_OVERLAP, PAPERS_DIR
 
 
 # Create router
-router = APIRouter(prefix="/documents", tags=["documents"])
+router = APIRouter(prefix="/papers", tags=["papers"])
 
 # Initialize components (singleton pattern)
 _parser = None
