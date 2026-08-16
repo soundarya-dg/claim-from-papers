@@ -14,7 +14,7 @@ from app.rag.retriever import Retriever
 _VERDICT_SYSTEM_PROMPT = (
     "You are a strict fact-checking assistant. "
     "Given a claim and a reference passage, determine whether the passage SUPPORTS or CONTRADICTS the claim. "
-    "Reply with exactly one word: either 'supported' or 'contradicted'. No other output."
+    "Reply with exactly one word: either 'supported' or 'contradicted'. No explanation, no reasoning, just the single word."
 )
 
 # Label constants
@@ -79,17 +79,38 @@ class ClaimVerifier:
                     model=self.model,
                     messages=messages,
                     temperature=0.0,
-                    max_tokens=10,
+                    max_completion_tokens=512,
+                    reasoning_effort="low",
                 )
-                return response.choices[0].message.content.strip().lower()
+                raw_verdict = response.choices[0].message.content
+                finish_reason = response.choices[0].finish_reason
+                print(f"[claim_verifier] Raw LLM response (len={len(raw_verdict) if raw_verdict else 0}): '{raw_verdict[:200] if raw_verdict else ''}...' (finish_reason: {finish_reason})")
+                
+                verdict = raw_verdict.strip().lower() if raw_verdict else ""
+                print(f"[claim_verifier] Processed verdict: '{verdict}'")
+                
+                # Handle empty responses or unexpected output
+                if not verdict:
+                    print(f"[claim_verifier] WARNING: Empty verdict from LLM, using 'contradicted' as fallback")
+                    return "contradicted"
+                
+                # Check for variations of "supported"
+                if "support" in verdict:
+                    return "supported"
+                
+                # Otherwise assume contradicted
+                return "contradicted"
+                
             except Exception as e:
                 last_exc = e
                 err_str = str(e)
                 if "tokens per day" in err_str:
+                    print(f"[claim_verifier] Daily token limit reached, stopping verification")
                     break  # daily limit hit, stop immediately
                 wait = 15 * (attempt + 1)
                 print(f"[claim_verifier] Error: {err_str[:120]} — waiting {wait}s before retry {attempt + 1}/4...")
                 time.sleep(wait)
+        print(f"[claim_verifier] All retries failed, using conservative fallback: contradicted")
         return "contradicted"  # conservative fallback on failure
 
 
@@ -105,9 +126,11 @@ class ClaimVerifier:
         Returns:
             Dict with keys: claim, label, confidence, supporting_chunk.
         """
+        print(f"[claim_verifier] Verifying claim: '{claim[:80]}...'")
         chunks = self.retriever.retrieve(query=claim, top_k=3) # retrieves top 3 chunks for the claim
 
         if not chunks:
+            print(f"[claim_verifier] No chunks found, marking as UNVERIFIED")
             return {
                 "claim": claim,
                 "label": UNVERIFIED,
@@ -118,14 +141,17 @@ class ClaimVerifier:
         top_chunk = chunks[0]
         distance = top_chunk.get("distance") or 1.0
         similarity = self._distance_to_similarity(distance)
+        print(f"[claim_verifier] Top chunk similarity: {similarity:.4f} (threshold: {self.confidence_threshold})")
 
         if similarity >= self.confidence_threshold:
             verdict = self._check_support(claim, top_chunk["text"])
             label = GROUNDED if verdict == "supported" else CONTRADICTED
             supporting_chunk = top_chunk["text"]
+            print(f"[claim_verifier] Label: {label.upper()} (verdict: {verdict})")
         else:
             label = UNVERIFIED
             supporting_chunk = None
+            print(f"[claim_verifier] Label: UNVERIFIED (similarity below threshold)")
 
         return {
             "claim": claim,
