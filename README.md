@@ -1,6 +1,6 @@
 # Claim From Papers
 
-This project is a proof-of-concept RAG system that not only answers questions based on research papers but also provides transparent claim verification for each part of the answer. It ensures that every claim in the generated answer is backed by real sources, giving users confidence in the information they receive.
+This project is a proof-of-concept RAG system that not only answers questions based on research papers but also provides transparent claim verification for each part of the answer. It independently checks factual claims in the generated answer against retrieved research-paper evidence and reports whether they are Grounded, Unverified, or Contradicted.
 
 ![UI Screenshot](assets/ui.png)
 
@@ -18,15 +18,15 @@ This project goes one step further: after the answer is generated, each atomic c
 1. **Knowledge Base**: The app starts with a knowledge base of 30 arXiv papers on "Text Classification using Large Language Models" (topic can be changed based on user preference), processed into chunks and stored as BGE-M3 embeddings in ChromaDB.
 2. **User Interaction**: Users can ask any question related to the topic, and the system will fetch relevant information from the papers to generate an answer. Also, users can upload their own PDFs to expand the knowledge base.
 3. **Retrieval**: The user's question is embedded and semantically matched to the top-K most relevant chunks.
-4. **Generation**: A prompt containing the retrieved chunks is sent to Llama 3.3 70B model (via Groq) to produce a grounded answer. A second LLM call then produces a concise summary (`short_answer`) that strips source citations for easy reading.
+4. **Generation**: A prompt containing the retrieved chunks is sent to `openai/gpt-oss-120b` via Groq to generate an answer grounded in the retrieved research-paper context. A second LLM call produces a concise summary (`short_answer`) without source citations for easier reading.
 5. **Claim Extraction**: The answer is decomposed into atomic factual claims using the same LLM.
 6. **Claim Verification**: Each claim is independently searched against ChromaDB. A high-similarity chunk triggers an LLM fact-check that labels the claim as Grounded, Unverified, or Contradicted.
 7. **Claim Grounding Rate**: The fraction of grounded claims is returned alongside the answer as a single transparency metric.
 
 ## Technologies Used
 
-- **Language**: Python 3.12
-- **LLM API**: Groq (access to Llama 3.3 70B)
+- **Language**: Python 3.13
+- **LLM API**: Groq (`openai/gpt-oss-120b`)
 - **Embeddings**: BGE-M3 (local, no API cost)
 - **Vector Database**: ChromaDB
 - **Web Framework**: FastAPI
@@ -35,6 +35,9 @@ This project goes one step further: after the answer is generated, each atomic c
 - **Paper Downloading**: arXiv API
 - **Evaluation**: DeepEval
 
+### LLM Model
+- The project currently uses `openai/gpt-oss-120b` through Groq. The project originally used Llama 3.3 70B Versatile, but migrated to GPT-OSS 120B after the Llama model was deprecated. 
+- GPT-OSS generation uses `max_completion_tokens` and low reasoning effort to support answer generation, claim extraction, claim verification, and summarization.
 
 ## Project Structure
 
@@ -88,7 +91,7 @@ claim-from-papers/
 ### Prerequisites
 
 - Python 3.12+
-- Groq API key: create a free account at [Groq](https://www.groq.com/) and generate an API key to access Llama 3.3 70B
+- Groq API key with access to `openai/gpt-oss-120b`
 
 ### Installation
 
@@ -144,20 +147,21 @@ python app/ingestion/ingest_and_vectorize.py --skip-download  # re-index only
 ```
 
 ## Evaluation
-
-Evaluated across 5 test cases (easy / medium / hard) achieving an average **54.5% Claim Grounding Rate**, **0.87 Faithfulness**, and **0.62 Answer Relevancy**. Full results in [`evaluation/results.json`](evaluation/results.json).
-
-![Evaluation Results](assets/eval-results.png)
-
-- **Claim Grounding Rate** - fraction of claims verified as grounded (always computed)
+The evaluation suite contains 15 questions across easy, medium, and hard difficulty levels. A selected subset can be evaluated for:
+- **Claim Grounding Rate** - fraction of extracted claims verified as grounded
 - **Keyword Coverage** - fraction of expected keywords present in the answer
-- **Answer Relevancy** - DeepEval metric using Groq as the LLM judge
-- **Faithfulness** - DeepEval metric using Groq as the LLM judge
+- **Answer Relevancy** - DeepEval metric
+- **Faithfulness** - DeepEval metric
 
 ```bash
 source venv/bin/activate
 python evaluation/evaluator.py
 ```
+
+The previous evaluation results were produced using the earlier Llama 3.3 70B configuration:
+
+![Evaluation Results](assets/eval-results.png)
+
 
 ## API Reference
 
@@ -207,4 +211,4 @@ pytest tests/test_rag.py::TestRetriever -v
 
 Standard RAG gives you an answer.
 
-**Claim From Papers gives you an answer and tells you exactly which parts of it are true.**
+**Claim From Papers gives you an answer, then independently checks how well its factual claims are supported by the research-paper knowledge base.**

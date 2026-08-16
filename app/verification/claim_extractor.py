@@ -59,28 +59,34 @@ class ClaimExtractor:
                     model=self.model,
                     messages=messages,
                     temperature=0.0,
-                    max_tokens=1024,
+                    max_completion_tokens=1024,
+                    reasoning_effort="low",
                 )
                 raw = response.choices[0].message.content.strip()
+                print(f"[claim_extractor] Received raw response ({len(raw)} chars): {raw[:200]}...")
                 break
             except Exception as e:
                 last_exc = e
                 err_str = str(e)
                 if "tokens per day" in err_str:
+                    print(f"[claim_extractor] Daily token limit reached")
                     return []  # daily limit hit, stop immediately
                 wait = 15 * (attempt + 1)
                 print(f"[claim_extractor] Error: {err_str[:120]} — waiting {wait}s before retry {attempt + 1}/4...")
                 time.sleep(wait)
         else:
+            print(f"[claim_extractor] All retries failed, returning empty list")
             return []
 
         # Attempt direct JSON parse
         try:
             claims = json.loads(raw)
             if isinstance(claims, list):
-                return [str(c).strip() for c in claims if str(c).strip()]
-        except json.JSONDecodeError:
-            pass
+                result = [str(c).strip() for c in claims if str(c).strip()]
+                print(f"[claim_extractor] Successfully parsed JSON, extracted {len(result)} claims")
+                return result
+        except json.JSONDecodeError as e:
+            print(f"[claim_extractor] Direct JSON parse failed: {e}")
 
         # Attempt to extract embedded JSON array
         match = re.search(r"\[.*?\]", raw, re.DOTALL)
@@ -88,13 +94,17 @@ class ClaimExtractor:
             try:
                 claims = json.loads(match.group())
                 if isinstance(claims, list):
-                    return [str(c).strip() for c in claims if str(c).strip()]
-            except json.JSONDecodeError:
-                pass
+                    result = [str(c).strip() for c in claims if str(c).strip()]
+                    print(f"[claim_extractor] Extracted embedded JSON array, {len(result)} claims")
+                    return result
+            except json.JSONDecodeError as e:
+                print(f"[claim_extractor] Embedded JSON parse failed: {e}")
 
         # Last resort: treat each non-empty line as a claim
         lines = [
             line.strip().lstrip("-*•123456789. ").strip()
             for line in raw.splitlines()
         ]
-        return [l for l in lines if l]
+        result = [l for l in lines if l]
+        print(f"[claim_extractor] Fallback line parsing, extracted {len(result)} claims")
+        return result

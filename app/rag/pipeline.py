@@ -97,10 +97,18 @@ class RAGPipeline:
             
             # Step 4: Claim extraction and verification
             try:
+                print(f"[pipeline] Starting claim extraction from answer (length: {len(answer)} chars)...")
                 claims = self.claim_extractor.extract(answer)
+                print(f"[pipeline] Extracted {len(claims)} claims")
+                
+                print(f"[pipeline] Starting claim verification...")
                 verification_results = self.claim_verifier.verify_claims(claims)
                 grounding_rate = self.claim_verifier.compute_grounding_rate(verification_results)
-            except Exception:
+                print(f"[pipeline] Verification complete. Grounding rate: {grounding_rate * 100:.1f}%")
+            except Exception as e:
+                print(f"[pipeline] ERROR during claim extraction/verification: {type(e).__name__}: {str(e)}")
+                import traceback
+                traceback.print_exc()
                 verification_results = []
                 grounding_rate = 0.0
 

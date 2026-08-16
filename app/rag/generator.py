@@ -19,7 +19,8 @@ class Generator:
         api_key: Optional[str] = None,
         model: str = LLM_MODEL,
         temperature: float = 0.1,
-        max_tokens: int = 1024
+        max_tokens: int = 1024,
+        reasoning_effort: str = "low"
     ):
         """
         Initialize the generator.
@@ -29,6 +30,7 @@ class Generator:
             model: Model name
             temperature: Sampling temperature (lower = more deterministic)
             max_tokens: Maximum tokens in response
+            reasoning_effort: Reasoning effort for GPT-OSS models ("low", "medium", "high", or "none")
         """
         self.api_key = api_key or GROQ_API_KEY
         
@@ -41,6 +43,7 @@ class Generator:
         self.model = model
         self.temperature = temperature
         self.max_tokens = max_tokens
+        self.reasoning_effort = reasoning_effort
     
 
     def generate(self, prompt: str, temperature: Optional[float] = None, max_tokens: Optional[int] = None) -> str:
@@ -66,7 +69,8 @@ class Generator:
                     model=self.model,
                     messages=messages,
                     temperature=_temperature,
-                    max_tokens=_max_tokens,
+                    max_completion_tokens=_max_tokens,
+                    reasoning_effort=self.reasoning_effort,
                     top_p=1,
                     stream=False
                 )
@@ -104,7 +108,8 @@ class Generator:
                     model=self.model,
                     messages=messages,
                     temperature=_temperature,
-                    max_tokens=_max_tokens,
+                    max_completion_tokens=_max_tokens,
+                    reasoning_effort=self.reasoning_effort,
                     top_p=1,
                     stream=False
                 )
@@ -168,7 +173,8 @@ class Generator:
                     model=self.model,
                     messages=messages,
                     temperature=0.1,
-                    max_tokens=256,
+                    max_completion_tokens=256,
+                    reasoning_effort=self.reasoning_effort,
                     top_p=1,
                     stream=False,
                 )
@@ -200,7 +206,8 @@ class Generator:
                 model=self.model,
                 messages=messages,
                 temperature=temperature if temperature is not None else self.temperature,
-                max_tokens=max_tokens if max_tokens is not None else self.max_tokens,
+                max_completion_tokens=max_tokens if max_tokens is not None else self.max_tokens,
+                reasoning_effort=self.reasoning_effort,
                 top_p=1,
                 stream=True
             )
